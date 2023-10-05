@@ -316,8 +316,8 @@ function App() {
     modifyTxHash();
     setChainToBeCorrectForManualDelivery();
     try {
-      await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, signer);
-      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done`)
+      const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, signer);
+      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done\n\nDestination transaction hash: ${manualDeliveryInfo.txHash} on ${manualDeliveryInfo.targetChain}`)
       setDisabled(false)
     } catch (e) {
       setResult(`An error occured when manually delivering: ${e}`)
