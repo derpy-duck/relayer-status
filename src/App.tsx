@@ -317,7 +317,7 @@ function App() {
     setChainToBeCorrectForManualDelivery();
     try {
       await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, signer);
-      await submitQuery();
+      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done`)
       setDisabled(false)
     } catch (e) {
       setResult(`An error occured when manually delivering: ${e}`)
