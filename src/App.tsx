@@ -263,26 +263,32 @@ function App() {
 
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | undefined>(undefined);
   const [signer, setSigner] = useState<ethers.Signer | undefined>(undefined);
-  const setChainToBeCorrectForManualDelivery = useCallback(() => {
+  const setChainToBeCorrectForManualDelivery = useCallback(async () => {
     if(!targetChain) return;
-    window.ethereum.request({
+
+    const myChainInfo = getChainInfo(environment, targetChain);
+    await window.ethereum.request({
       method: "wallet_addEthereumChain",
-      params: [getChainInfo(environment, targetChain)]
-  });
+      params: [myChainInfo]
+    });
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{chainId: myChainInfo.chainId}]
+    });
   }, [targetChain, environment])
   
   useEffect(() => {
+    if(!window.ethereum) return;
     const newProvider = new ethers.providers.Web3Provider(window.ethereum, "any");
     setProvider(newProvider);
   }, [window.ethereum])
 
-  useEffect(() => {
-    const func = async () => {
-      if(!provider) return;
-      await provider.send("eth_requestAccounts", []);
-      setSigner(provider.getSigner());
-    }
-    func();
+  const updateSigner = useCallback(async (): Promise<ethers.Signer | undefined> => {
+    if(!provider) return;
+    await provider.send("eth_requestAccounts", []);
+    const newSigner = provider.getSigner();
+    setSigner(newSigner);
+    return newSigner;
   }, [provider])
 
   const modifyTxHash = useCallback(() => {
@@ -313,17 +319,19 @@ function App() {
   }, [environmentInput, chainInput, txHashInput])
   const manualDelivery = useCallback(async () => {
     setDisabled(true);
-    modifyTxHash();
-    setChainToBeCorrectForManualDelivery();
+    if(!provider) return;
+    const mySigner = await updateSigner();
+    await setChainToBeCorrectForManualDelivery();
     try {
-      const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, signer);
-      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done\n\nDestination transaction hash: ${manualDeliveryInfo.txHash} on ${manualDeliveryInfo.targetChain}`)
+      const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, mySigner);
+      const blockScanLink = getChainInfo(environment, manualDeliveryInfo.targetChain).blockExplorerUrls[0] + `tx/${manualDeliveryInfo.txHash}`
+      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done\n\nDestination transaction: ${blockScanLink}`)
       setDisabled(false)
     } catch (e) {
       setResult(`An error occured when manually delivering: ${e}`)
       setDisabled(false)
     }
-  }, [environment, chain, txHash])
+  }, [targetChain, environment, chain, txHash])
   return (
     <div className="App">
       <header className="App-header">
@@ -354,7 +362,7 @@ function App() {
         <Box sx={{whiteSpace: "break-spaces", textAlign: "left", width: "60vw", height: "60vh", overflow: "scroll", fontSize: "16px", marginTop: "32px", marginBottom: "32px"}}>
           {disabled ? 'Loading...' : <div>
           {result}
-          {(targetChain !== undefined) && <Button variant="outlined" disabled={disabled} onClick={manualDelivery} sx={{marginTop: "32px"}}> {manualDeliveryText} </Button>}
+          {((targetChain !== undefined) && provider) && <Button variant="outlined" disabled={disabled} onClick={manualDelivery} sx={{marginTop: "32px"}}> {manualDeliveryText} </Button>}
           </div>}
         </Box>
         
