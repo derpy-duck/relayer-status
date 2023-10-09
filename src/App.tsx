@@ -1,269 +1,47 @@
 import React from 'react';
 import './App.css';
 import { useState, useCallback, useEffect } from 'react';
-import { ChainName, Network, relayer } from '@certusone/wormhole-sdk';
-import { MenuItem, Select, TextField, Grid, Button, Box, Typography} from '@mui/material';
+import { ChainName, Network, relayer} from '@certusone/wormhole-sdk';
+import { MenuItem, Select, TextField, Grid, Button, Box, Typography, Checkbox} from '@mui/material';
 import { ethers } from 'ethers';
+import {Environment, environments, getChainInfo, ManualDeliveryResult } from "./chainInfo"
 
+const modifyTxHash = (rawTxHash: string) => {
+  let actualValue = rawTxHash.trim();
+  if(actualValue.substring(0, 2) !== '0x') actualValue = '0x' + actualValue;
+  actualValue = actualValue.substring(0, 66);
+  return actualValue;
+} 
 
-type Environment = {label: string, value: Network};
+const formatManualDeliveryPrompt = (manualDeliveryInfo: ManualDeliveryResult) => {
+  return `Manually delivering on ${manualDeliveryInfo.targetChain} would cost ${ethers.utils.formatEther(manualDeliveryInfo.quote)} ${manualDeliveryInfo.targetChain} currency - Click 'Manual Delivery' to do this!`
+}
 
-const environments: Environment[] = [{label: 'Testnet', value: 'TESTNET'}]
-// const environments: Environment[] = [{label: 'Mainnet', value: 'MAINNET'}, {label: 'Testnet', value: 'TESTNET'}]
+const formatManualDeliveryResult = (manualDeliveryInfo: ManualDeliveryResult, txHash: string, chain: ChainName, environment: Environment) => {
+  const blockScanLink = getChainInfo(environment, manualDeliveryInfo.targetChain).blockExplorerUrls[0] + `tx/${manualDeliveryInfo.txHash}`
+  return (`Manual delivery for transaction ${txHash} on ${chain}, ${environment.label}\n\nDestination transaction: ${blockScanLink}`)
+}
 
-const getChainInfo = (environment: Environment, targetChain: ChainName) => {
-  if (!targetChain) {
-    throw new Error('This should not happen');
-  }
-
-  if (environment.label === 'Mainnet') {
-    if (targetChain === 'ethereum') {
-      return {
-        chainId: "0x1",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Ethereum Mainnet",
-        nativeCurrency: {
-          name: "Ether",
-          symbol: "ETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://etherscan.io/"],
-      };
-    } else if (targetChain === 'bsc') {
-      return {
-        chainId: "0x38",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Binance Smart Chain",
-        nativeCurrency: {
-          name: "Binance Coin",
-          symbol: "BNB",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://bscscan.com/"],
-      };
-    } else if (targetChain === 'polygon') {
-      return {
-        chainId: "0x89",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Polygon Mainnet",
-        nativeCurrency: {
-          name: "MATIC",
-          symbol: "MATIC",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://polygonscan.com/"],
-      };
-    } else if (targetChain === 'avalanche') {
-      return {
-        chainId: "0xa86a",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Avalanche Mainnet",
-        nativeCurrency: {
-          name: "AVAX",
-          symbol: "AVAX",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://explorer.avax.network/"],
-      };
-    } else if (targetChain === 'celo') {
-      return {
-        chainId: "0xa4ec",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Celo Mainnet",
-        nativeCurrency: {
-          name: "Celo Dollar",
-          symbol: "cUSD",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://explorer.celo.org/"],
-      };
-    } else if (targetChain === 'moonbeam') {
-      return {
-        chainId: "0x504",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Moonbeam Mainnet",
-        nativeCurrency: {
-          name: "Moonbeam Token",
-          symbol: "MOON",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://moonscan.io"],
-      };
-    } else if (targetChain === 'arbitrum') {
-      return {
-        chainId: "0xa4b1",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Arbitrum Mainnet",
-        nativeCurrency: {
-          name: "Arbitrum Ether",
-          symbol: "AETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://arbiscan.io"],
-      };
-    } else if (targetChain === 'optimism') {
-      return {
-        chainId: "0xa",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Optimism Mainnet",
-        nativeCurrency: {
-          name: "Optimism Ether",
-          symbol: "OETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://optimistic.etherscan.io"],
-      };
-    } else if (targetChain === 'base') {
-      return {
-        chainId: "0x2105",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Base Mainnet",
-        nativeCurrency: {
-          name: "Base Token",
-          symbol: "BASE",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://basescan.org"],
-      };
-    } else {
-      throw new Error('Invalid target chain');
-    }
-  } else if (environment.label === 'Testnet') {
-    if (targetChain === 'ethereum') {
-      return {
-        chainId: "0x5",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Ethereum Testnet",
-        nativeCurrency: {
-          name: "Ether",
-          symbol: "ETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://goerli.etherscan.io/"],
-      };
-    } else if (targetChain === 'bsc') {
-      return {
-        chainId: "0x61",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "BSC Testnet",
-        nativeCurrency: {
-          name: "Binance Coin",
-          symbol: "BNB",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://testnet.bscscan.com/"],
-      };
-    } else if (targetChain === 'polygon') {
-      return {
-        chainId: "0x13881",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Polygon Testnet",
-        nativeCurrency: {
-          name: "MATIC",
-          symbol: "MATIC",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://mumbai.polygonscan.com"],
-      };
-    } else if (targetChain === 'avalanche') {
-      return {
-        chainId: "0xa869",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Avalanche Testnet",
-        nativeCurrency: {
-          name: "AVAX",
-          symbol: "AVAX",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://testnet.snowtrace.io/"],
-      };
-    } else if (targetChain === 'celo') {
-      return {
-        chainId: "0xaef3",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Celo Testnet",
-        nativeCurrency: {
-          name: "Celo Dollar",
-          symbol: "cUSD",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://alfajores.celoscan.io/"],
-      };
-    } else if (targetChain === 'moonbeam') {
-      return {
-        chainId: "0x507",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Moonbeam Testnet",
-        nativeCurrency: {
-          name: "Moonbeam Token",
-          symbol: "MOON",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://moonbase.moonscan.io/"],
-      };
-    } else if (targetChain === 'arbitrum') {
-      return {
-        chainId: "0x66eed",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Arbitrum Testnet",
-        nativeCurrency: {
-          name: "Arbitrum Ether",
-          symbol: "AETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://testnet.arbiscan.io/"],
-      };
-    } else if (targetChain === 'optimism') {
-      return {
-        chainId: "0x1a4",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Optimism Testnet",
-        nativeCurrency: {
-          name: "Optimism Ether",
-          symbol: "OETH",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://goerli-optimism.etherscan.io/"],
-      };
-    } else if (targetChain === 'base') {
-      return {
-        chainId: "0x14a33",
-        rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
-        chainName: "Base Testnet",
-        nativeCurrency: {
-          name: "Base Token",
-          symbol: "BASE",
-          decimals: 18,
-        },
-        blockExplorerUrls: ["https://goerli.basescan.org/"],
-      };
-    } else {
-      throw new Error('Invalid target chain');
-    }
-  } else {
-    throw new Error('Invalid environment');
-  }
-};
 
 function App() {
   const [disabled, setDisabled] = useState<boolean>(false);
 
-  const [environmentInput, setEnvironmentInput] = useState<Environment>(environments[0]);
-  const [chainInput, setChainInput] = useState<ChainName | undefined>(undefined);
-  const [txHashInput, setTxHashInput] = useState<string>("");
-
   const [environment, setEnvironment] = useState<Environment>(environments[0]);
   const [chain, setChain] = useState<ChainName | undefined>(undefined);
   const [txHash, setTxHash] = useState<string>("");
+  const [nthRelayerVaa, setNthRelayerVaa] = useState<number>(0);
+  const [destinationBlockNumber, setDestinationBlockNumber] = useState<number | undefined>(undefined);
+  const [extraFields, setExtraFields] = useState<boolean>(false);
 
-  const [result, setResult] = useState<string>("");
-  const [manualDeliveryText, setManualDeliveryText] = useState<string>("");
-  const [targetChain, setTargetChain] = useState<ChainName | undefined>(undefined);
+  const [statusResult, setStatusResult] = useState<relayer.DeliveryInfo | undefined>(undefined);
+  const [manualDeliveryResult, setManualDeliveryResult] = useState<ManualDeliveryResult | undefined>(undefined);
 
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | undefined>(undefined);
   const [signer, setSigner] = useState<ethers.Signer | undefined>(undefined);
-  const setChainToBeCorrectForManualDelivery = useCallback(async () => {
+
+  const setTargetChainForManualDeliveryWallet = useCallback(async (targetChain: ChainName) => {
     if(!targetChain) return;
 
     const myChainInfo = getChainInfo(environment, targetChain);
@@ -275,7 +53,7 @@ function App() {
       method: "wallet_switchEthereumChain",
       params: [{chainId: myChainInfo.chainId}]
     });
-  }, [targetChain, environment])
+  }, [environment])
   
   useEffect(() => {
     if(!window.ethereum) return;
@@ -291,80 +69,101 @@ function App() {
     return newSigner;
   }, [provider])
 
-  const modifyTxHash = useCallback(() => {
-    let actualValue = txHashInput.trim();
-    if(actualValue.substring(0, 2) !== '0x') actualValue = '0x' + actualValue;
-    actualValue = actualValue.substring(66);
-    setTxHashInput(actualValue);
-  }, [txHashInput])
   const submitQuery = useCallback(async () => {
     setDisabled(true);
-    modifyTxHash();
+    const txHashForQuery = modifyTxHash(txHash);
+    console.log(txHash + " " + txHashForQuery);
+    setTxHash(txHashForQuery);
+    setErrorMessage(undefined);
+    setManualDeliveryResult(undefined);
+    setStatusResult(undefined);
+    try {
+      console.log(`destination block nuimber: ${destinationBlockNumber} ${destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined}`)
+      const result = await relayer.getWormholeRelayerInfo(chain as ChainName, txHashForQuery, {environment: environment.value as Network, wormholeRelayerWhMessageIndex: nthRelayerVaa, targetBlockRange: destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined});
+      setStatusResult(result);
 
-    setEnvironment(environmentInput);
-    setTxHash(txHashInput);
-    setChain(chainInput);
-    try {
-      const result = await relayer.getWormholeRelayerInfo(chainInput as ChainName, txHashInput, {environment: environmentInput.value as Network});
-      setResult(result.stringified || "");
-      const manualDeliveryInfo = await relayer.manualDelivery(chainInput as ChainName, txHashInput, {environment: environmentInput.value as Network}, true);
-      setManualDeliveryText(`Manual deliver on ${manualDeliveryInfo.targetChain} using ${ethers.utils.formatEther(manualDeliveryInfo.quote)} ${manualDeliveryInfo.targetChain} currency`)
-      setTargetChain(manualDeliveryInfo.targetChain);
+      try {
+        const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHashForQuery, {environment: environment.value as Network, wormholeRelayerWhMessageIndex: nthRelayerVaa, targetBlockRange: destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined}, true);
+        setManualDeliveryResult(manualDeliveryInfo);
+      } catch {
+        setManualDeliveryResult(undefined);
+      }
+
+      setErrorMessage(undefined);
       setDisabled(false)
     } catch (e) {
-      setResult(`An error occured when querying status: ${e}`)
-      setTargetChain(undefined);
+      setErrorMessage(`An error occured when querying status: ${e}`);
       setDisabled(false)
     }
-  }, [environmentInput, chainInput, txHashInput])
+  }, [environment, chain, txHash, nthRelayerVaa, destinationBlockNumber])
+
   const manualDelivery = useCallback(async () => {
-    setDisabled(true);
     if(!provider) return;
-    const mySigner = await updateSigner();
-    await setChainToBeCorrectForManualDelivery();
+    setDisabled(true);
+    setErrorMessage(undefined);
+    setManualDeliveryResult(undefined);
+    setStatusResult(undefined);
     try {
-      const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network}, false, undefined, mySigner);
-      const blockScanLink = getChainInfo(environment, manualDeliveryInfo.targetChain).blockExplorerUrls[0] + `tx/${manualDeliveryInfo.txHash}`
-      setResult(`Manual delivery for transaction ${txHash} on chain ${chain}, ${environment.label} done\n\nDestination transaction: ${blockScanLink}`)
+      const manualDeliveryInfo = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network, wormholeRelayerWhMessageIndex: nthRelayerVaa, targetBlockRange: destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined}, true);
+      setManualDeliveryResult(manualDeliveryInfo);
+      const mySigner = await updateSigner();
+      await setTargetChainForManualDeliveryWallet(manualDeliveryInfo.targetChain);
+      const manualDeliveryResponse = await relayer.manualDelivery(chain as ChainName, txHash, {environment: environment.value as Network, wormholeRelayerWhMessageIndex: nthRelayerVaa, targetBlockRange: destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined}, false, undefined, mySigner);
+      setManualDeliveryResult(manualDeliveryResponse);
+      setErrorMessage('');
       setDisabled(false)
     } catch (e) {
-      setResult(`An error occured when manually delivering: ${e}`)
+      console.log(`got an error: ${e}`)
+      setErrorMessage(`An error occured when manually delivering: ${e}`)
       setDisabled(false)
     }
-  }, [targetChain, environment, chain, txHash])
+  }, [environment, chain, txHash, nthRelayerVaa, destinationBlockNumber])
+
+  let resultString = '';
+  if(statusResult) {
+    resultString += statusResult.stringified;
+    if(statusResult.targetChainStatus.chain === 'arbitrum' && !extraFields) {
+      resultString += `\n\nThe destination chain is Arbitrum - for Arbitrum, you have to specify the 'destination block number' to see if the delivery has occured (click the checkbox above)`
+    }
+    resultString += `\n\n${(manualDeliveryResult && provider) ? (manualDeliveryResult.txHash && chain ? formatManualDeliveryResult(manualDeliveryResult, txHash, chain, environment) : (statusResult.targetChainStatus.events.length === 0) ? formatManualDeliveryPrompt(manualDeliveryResult) : '') : ''}`
+  }
+  console.log(`da error mesg: ${errorMessage}`)
   return (
     <div className="App">
       <header className="App-header">
           <Grid direction="row">
-          <Select value={environmentInput.value} disabled={disabled} label="Environment" onChange={(event) => {setEnvironmentInput(environments.find((e)=>(e.value === event.target.value))!)}}>
+          <Select value={environment.value} disabled={disabled} label="Environment" onChange={(event) => {setEnvironment(environments.find((e)=>(e.value === event.target.value))!)}}>
             {environments.map((myEnvironment) => <MenuItem value={myEnvironment.value}>{myEnvironment.label}</MenuItem>)}
           </Select>
-          <Select value={chainInput} disabled={disabled} label="Source chain" onChange={(event) => {setChainInput(event.target.value as ChainName)}}>
+          <Select value={chain} disabled={disabled} label="Source chain" onChange={(event) => {setChain(event.target.value as ChainName)}}>
             {['ethereum', 'bsc', 'polygon', 'avalanche', 'celo', 'moonbeam', 'arbitrum', 'optimism', 'base'].map((chain) => <MenuItem value={chain}>{chain}</MenuItem>)}
           </Select>
           <TextField
             id="outlined-controlled"
             label="Transaction Hash"
-            value={txHashInput}
+            value={txHash}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setTxHashInput(event.target.value);
+              setTxHash(event.target.value);
             }}
             disabled={disabled}
             onKeyDown={async (event) => {
-              if((event.key === 'Enter') && txHashInput && chainInput) {
+              if((event.key === 'Enter') && txHash && chain) {
                 submitQuery();
               }
             }}
           />
-          <Button variant="contained" onClick={submitQuery} sx={{height: '100%', marginLeft: "40px"}}> {"Submit"} </Button>
+          <Checkbox value={extraFields} onChange={(e) => {setExtraFields(e.target.checked); if(!e.target.checked) {setNthRelayerVaa(0); setDestinationBlockNumber(undefined)}}} />
+          {extraFields && <TextField type="number" value={nthRelayerVaa} label={`Index of request in tx (0-indexed)`} disabled={disabled} onChange={(event) => {setNthRelayerVaa(parseInt(event.target.value))}} />}
+          {extraFields && <TextField type="number" value={destinationBlockNumber} label="Destination Block Number" disabled={disabled} onChange={(event) => {setDestinationBlockNumber(parseInt(event.target.value))}} />}
+          <Button variant="contained" onClick={submitQuery} sx={{height: '100%', marginLeft: "40px"}}> {"Get Status"} </Button>
+          {provider && <Button variant="contained" onClick={manualDelivery} sx={{height: '100%', marginLeft: "20px"}}> {"Manual Delivery"} </Button>}
         </Grid>
        
-        <Box sx={{whiteSpace: "break-spaces", textAlign: "left", width: "60vw", height: "60vh", overflow: "scroll", fontSize: "16px", marginTop: "32px", marginBottom: "32px"}}>
-          {disabled ? 'Loading...' : <div>
-          {result}
-          {((targetChain !== undefined) && provider) && <Button variant="outlined" disabled={disabled} onClick={manualDelivery} sx={{marginTop: "32px"}}> {manualDeliveryText} </Button>}
+        {<Box sx={{whiteSpace: "break-spaces", textAlign: "left", width: "60vw", height: "60vh", overflow: "scroll", fontSize: "16px", marginTop: "32px", marginBottom: "32px"}}>
+          {(disabled) ? 'Loading...' : <div>
+            {errorMessage ? errorMessage : resultString}
           </div>}
-        </Box>
+        </Box>}
         
 
   

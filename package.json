@@ -4,7 +4,7 @@
   "homepage": "https://derpy-duck.github.io/relayer-status",
   "private": true,
   "dependencies": {
-    "@certusone/wormhole-sdk": "^0.10.5-beta.3",
+    "@certusone/wormhole-sdk": "^0.10.5-beta.4",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.14.11",
