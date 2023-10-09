@@ -72,13 +72,11 @@ function App() {
   const submitQuery = useCallback(async () => {
     setDisabled(true);
     const txHashForQuery = modifyTxHash(txHash);
-    console.log(txHash + " " + txHashForQuery);
     setTxHash(txHashForQuery);
     setErrorMessage(undefined);
     setManualDeliveryResult(undefined);
     setStatusResult(undefined);
     try {
-      console.log(`destination block nuimber: ${destinationBlockNumber} ${destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined}`)
       const result = await relayer.getWormholeRelayerInfo(chain as ChainName, txHashForQuery, {environment: environment.value as Network, wormholeRelayerWhMessageIndex: nthRelayerVaa, targetBlockRange: destinationBlockNumber ? [destinationBlockNumber, destinationBlockNumber] : undefined});
       setStatusResult(result);
 
@@ -113,7 +111,6 @@ function App() {
       setErrorMessage('');
       setDisabled(false)
     } catch (e) {
-      console.log(`got an error: ${e}`)
       setErrorMessage(`An error occured when manually delivering: ${e}`)
       setDisabled(false)
     }
@@ -127,7 +124,6 @@ function App() {
     }
     resultString += `\n\n${(manualDeliveryResult && provider) ? (manualDeliveryResult.txHash && chain ? formatManualDeliveryResult(manualDeliveryResult, txHash, chain, environment) : (statusResult.targetChainStatus.events.length === 0) ? formatManualDeliveryPrompt(manualDeliveryResult) : '') : ''}`
   }
-  console.log(`da error mesg: ${errorMessage}`)
   return (
     <div className="App">
       <header className="App-header">
