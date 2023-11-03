@@ -1,20 +1,29 @@
-import { ChainName, Network, relayer } from '@certusone/wormhole-sdk';
-import { BigNumber } from 'ethers';
+import { ChainName, Network, relayer } from "@certusone/wormhole-sdk";
+import { BigNumber } from "ethers";
 
-export type Environment = {label: string, value: Network};
+export type Environment = { label: string; value: Network };
 
-export type ManualDeliveryResult = { quote: BigNumber; targetChain: ChainName; txHash?: string };
+export type ManualDeliveryResult = {
+  quote: BigNumber;
+  targetChain: ChainName;
+  txHash?: string;
+};
 
-export const environments: Environment[] = [{label: 'Testnet', value: 'TESTNET'}]
-// const environments: Environment[] = [{label: 'Mainnet', value: 'MAINNET'}, {label: 'Testnet', value: 'TESTNET'}]
+export const environments: Environment[] = [
+  { label: "Mainnet", value: "MAINNET" },
+  { label: "Testnet", value: "TESTNET" },
+];
 
-export const getChainInfo = (environment: Environment, targetChain: ChainName) => {
+export const getChainInfo = (
+  environment: Environment,
+  targetChain: ChainName
+) => {
   if (!targetChain) {
-    throw new Error('This should not happen');
+    throw new Error("This should not happen");
   }
 
-  if (environment.label === 'Mainnet') {
-    if (targetChain === 'ethereum') {
+  if (environment.label === "Mainnet") {
+    if (targetChain === "ethereum") {
       return {
         chainId: "0x1",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -26,7 +35,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://etherscan.io/"],
       };
-    } else if (targetChain === 'bsc') {
+    } else if (targetChain === "bsc") {
       return {
         chainId: "0x38",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -38,7 +47,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://bscscan.com/"],
       };
-    } else if (targetChain === 'polygon') {
+    } else if (targetChain === "polygon") {
       return {
         chainId: "0x89",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -50,7 +59,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://polygonscan.com/"],
       };
-    } else if (targetChain === 'avalanche') {
+    } else if (targetChain === "avalanche") {
       return {
         chainId: "0xa86a",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -62,7 +71,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://explorer.avax.network/"],
       };
-    } else if (targetChain === 'celo') {
+    } else if (targetChain === "celo") {
       return {
         chainId: "0xa4ec",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -74,7 +83,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://explorer.celo.org/"],
       };
-    } else if (targetChain === 'moonbeam') {
+    } else if (targetChain === "moonbeam") {
       return {
         chainId: "0x504",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -86,7 +95,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://moonscan.io"],
       };
-    } else if (targetChain === 'arbitrum') {
+    } else if (targetChain === "arbitrum") {
       return {
         chainId: "0xa4b1",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -98,7 +107,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://arbiscan.io"],
       };
-    } else if (targetChain === 'optimism') {
+    } else if (targetChain === "optimism") {
       return {
         chainId: "0xa",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -110,7 +119,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://optimistic.etherscan.io"],
       };
-    } else if (targetChain === 'base') {
+    } else if (targetChain === "base") {
       return {
         chainId: "0x2105",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -123,10 +132,10 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         blockExplorerUrls: ["https://basescan.org"],
       };
     } else {
-      throw new Error('Invalid target chain');
+      throw new Error("Invalid target chain");
     }
-  } else if (environment.label === 'Testnet') {
-    if (targetChain === 'ethereum') {
+  } else if (environment.label === "Testnet") {
+    if (targetChain === "ethereum") {
       return {
         chainId: "0x5",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -138,7 +147,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://goerli.etherscan.io/"],
       };
-    } else if (targetChain === 'bsc') {
+    } else if (targetChain === "bsc") {
       return {
         chainId: "0x61",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -150,7 +159,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://testnet.bscscan.com/"],
       };
-    } else if (targetChain === 'polygon') {
+    } else if (targetChain === "polygon") {
       return {
         chainId: "0x13881",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -162,7 +171,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://mumbai.polygonscan.com"],
       };
-    } else if (targetChain === 'avalanche') {
+    } else if (targetChain === "avalanche") {
       return {
         chainId: "0xa869",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -174,7 +183,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://testnet.snowtrace.io/"],
       };
-    } else if (targetChain === 'celo') {
+    } else if (targetChain === "celo") {
       return {
         chainId: "0xaef3",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -186,7 +195,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://alfajores.celoscan.io/"],
       };
-    } else if (targetChain === 'moonbeam') {
+    } else if (targetChain === "moonbeam") {
       return {
         chainId: "0x507",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -198,7 +207,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://moonbase.moonscan.io/"],
       };
-    } else if (targetChain === 'arbitrum') {
+    } else if (targetChain === "arbitrum") {
       return {
         chainId: "0x66eed",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -210,7 +219,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://testnet.arbiscan.io/"],
       };
-    } else if (targetChain === 'optimism') {
+    } else if (targetChain === "optimism") {
       return {
         chainId: "0x1a4",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -222,7 +231,7 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         },
         blockExplorerUrls: ["https://goerli-optimism.etherscan.io/"],
       };
-    } else if (targetChain === 'base') {
+    } else if (targetChain === "base") {
       return {
         chainId: "0x14a33",
         rpcUrls: [relayer.RPCS_BY_CHAIN[environment.value][targetChain]],
@@ -235,9 +244,9 @@ export const getChainInfo = (environment: Environment, targetChain: ChainName) =
         blockExplorerUrls: ["https://goerli.basescan.org/"],
       };
     } else {
-      throw new Error('Invalid target chain');
+      throw new Error("Invalid target chain");
     }
   } else {
-    throw new Error('Invalid environment');
+    throw new Error("Invalid environment");
   }
 };
